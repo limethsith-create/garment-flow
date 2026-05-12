@@ -1,0 +1,1237 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<meta name="theme-color" content="#6c5ce7">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="manifest" href="/manifest.json">
+<title>GarmentFlow</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --bg:#0f0f14;--surface:#1a1a24;--surface2:#22222e;--surface3:#2a2a38;
+  --border:#2e2e3e;--text:#e8e8ef;--text2:#9898a8;--text3:#68687a;
+  --accent:#6c5ce7;--accent2:#a29bfe;--accent-glow:rgba(108,92,231,0.15);
+  --green:#00cec9;--red:#ff6b6b;--orange:#fdcb6e;--pink:#fd79a8;
+  --radius:12px;--radius-sm:8px;--shadow:0 4px 24px rgba(0,0,0,0.3);
+}
+html,body{height:100%;font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);overflow:hidden}
+#app{display:flex;flex-direction:column;height:100dvh;max-width:480px;margin:0 auto;position:relative}
+
+/* Top bar */
+.topbar{display:flex;align-items:center;justify-content:space-between;padding:16px 20px 12px;background:var(--bg);position:relative;z-index:10}
+.topbar h1{font-size:20px;font-weight:700;background:linear-gradient(135deg,var(--accent),var(--accent2));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.topbar-actions{display:flex;gap:8px}
+.topbar-btn{width:36px;height:36px;border-radius:50%;border:none;background:var(--surface2);color:var(--text2);display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all .2s}
+.topbar-btn:hover{background:var(--accent);color:#fff}
+.topbar-btn svg{width:18px;height:18px}
+
+/* Main content */
+.content{flex:1;overflow-y:auto;padding:0 20px 100px;scroll-behavior:smooth;-webkit-overflow-scrolling:touch}
+.content::-webkit-scrollbar{display:none}
+
+/* Bottom nav */
+.nav{display:flex;justify-content:space-around;padding:8px 12px calc(8px + env(safe-area-inset-bottom));background:var(--surface);border-top:1px solid var(--border);position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:480px;z-index:100;backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);background:rgba(26,26,36,0.85)}
+.nav-item{display:flex;flex-direction:column;align-items:center;gap:2px;padding:6px 12px;border-radius:var(--radius-sm);cursor:pointer;transition:all .2s;border:none;background:none;color:var(--text3);font-size:10px;font-family:inherit}
+.nav-item.active{color:var(--accent)}
+.nav-item.active svg{filter:drop-shadow(0 0 6px var(--accent))}
+.nav-item svg{width:22px;height:22px;transition:all .2s}
+
+/* Cards */
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px;margin-bottom:12px;transition:all .2s}
+.card:hover{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent-glow)}
+.card-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
+.card-title{font-size:14px;font-weight:600}
+.card-subtitle{font-size:12px;color:var(--text2)}
+.badge{display:inline-flex;align-items:center;padding:3px 8px;border-radius:20px;font-size:11px;font-weight:500}
+.badge-green{background:rgba(0,206,201,0.12);color:var(--green)}
+.badge-orange{background:rgba(253,203,110,0.12);color:var(--orange)}
+.badge-red{background:rgba(255,107,107,0.12);color:var(--red)}
+.badge-purple{background:var(--accent-glow);color:var(--accent2)}
+
+/* Stat cards */
+.stats-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px}
+.stat-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:14px;position:relative;overflow:hidden}
+.stat-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px}
+.stat-card.purple::before{background:linear-gradient(90deg,var(--accent),var(--accent2))}
+.stat-card.green::before{background:var(--green)}
+.stat-card.orange::before{background:var(--orange)}
+.stat-card.pink::before{background:var(--pink)}
+.stat-label{font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px}
+.stat-value{font-size:22px;font-weight:700}
+.stat-sub{font-size:11px;color:var(--text2);margin-top:2px}
+
+/* Section headers */
+.section-header{display:flex;justify-content:space-between;align-items:center;margin:20px 0 12px}
+.section-title{font-size:16px;font-weight:600}
+.section-link{font-size:12px;color:var(--accent);cursor:pointer;border:none;background:none;font-family:inherit}
+
+/* Form */
+.form-group{margin-bottom:16px}
+.form-label{display:block;font-size:12px;color:var(--text2);margin-bottom:6px;font-weight:500}
+.form-input{width:100%;padding:12px 14px;background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius-sm);color:var(--text);font-size:14px;font-family:inherit;transition:all .2s;outline:none}
+.form-input:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-glow)}
+.form-input::placeholder{color:var(--text3)}
+select.form-input{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%239898a8' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 12px center}
+textarea.form-input{resize:vertical;min-height:80px}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+
+/* Photo upload */
+.photo-upload{width:100%;aspect-ratio:16/10;border:2px dashed var(--border);border-radius:var(--radius);display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;transition:all .2s;overflow:hidden;position:relative;background:var(--surface2)}
+.photo-upload:hover{border-color:var(--accent)}
+.photo-upload img{width:100%;height:100%;object-fit:cover;position:absolute;top:0;left:0}
+.photo-upload svg{width:32px;height:32px;color:var(--text3);margin-bottom:8px}
+.photo-upload span{font-size:12px;color:var(--text3)}
+.photo-upload input{display:none}
+
+/* Buttons */
+.btn{padding:12px 24px;border-radius:var(--radius-sm);font-size:14px;font-weight:600;font-family:inherit;cursor:pointer;transition:all .2s;border:none;display:inline-flex;align-items:center;justify-content:center;gap:8px}
+.btn-primary{background:linear-gradient(135deg,var(--accent),#7c6cf0);color:#fff;box-shadow:0 4px 16px rgba(108,92,231,0.3)}
+.btn-primary:hover{transform:translateY(-1px);box-shadow:0 6px 24px rgba(108,92,231,0.4)}
+.btn-primary:active{transform:translateY(0)}
+.btn-full{width:100%}
+.btn-secondary{background:var(--surface2);color:var(--text);border:1px solid var(--border)}
+.btn-danger{background:rgba(255,107,107,0.12);color:var(--red);border:1px solid rgba(255,107,107,0.2)}
+.btn-sm{padding:8px 14px;font-size:12px}
+
+/* Product card in list */
+.product-card{display:flex;gap:12px;align-items:center}
+.product-thumb{width:56px;height:56px;border-radius:var(--radius-sm);overflow:hidden;flex-shrink:0;background:var(--surface2)}
+.product-thumb img{width:100%;height:100%;object-fit:cover}
+.product-info{flex:1;min-width:0}
+.product-name{font-size:14px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.product-meta{font-size:12px;color:var(--text2);margin-top:2px}
+.product-price{font-size:14px;font-weight:600;color:var(--green);text-align:right}
+
+/* Sale row */
+.sale-row{display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-bottom:1px solid var(--border)}
+.sale-row:last-child{border-bottom:none}
+.sale-info{flex:1}
+.sale-buyer{font-size:14px;font-weight:500}
+.sale-detail{font-size:12px;color:var(--text2);margin-top:2px}
+.sale-amount{font-weight:600;color:var(--green)}
+
+/* Chart container */
+.chart-wrap{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px;margin-bottom:12px}
+.chart-wrap canvas{width:100%!important;max-height:200px}
+
+/* Empty state */
+.empty{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:48px 20px;text-align:center}
+.empty svg{width:48px;height:48px;color:var(--text3);margin-bottom:16px;opacity:.5}
+.empty h3{font-size:16px;margin-bottom:6px;color:var(--text2)}
+.empty p{font-size:13px;color:var(--text3);max-width:240px}
+
+/* Modal / overlay */
+.modal-overlay{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.7);z-index:200;display:flex;align-items:flex-end;justify-content:center;backdrop-filter:blur(4px)}
+.modal{background:var(--surface);border-radius:20px 20px 0 0;width:100%;max-width:480px;max-height:90dvh;overflow-y:auto;padding:20px 20px calc(20px + env(safe-area-inset-bottom));animation:slideUp .3s ease}
+@keyframes slideUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
+.modal-handle{width:36px;height:4px;background:var(--border);border-radius:2px;margin:0 auto 16px}
+.modal-title{font-size:18px;font-weight:700;margin-bottom:16px}
+
+/* Toast */
+.toast{position:fixed;top:20px;left:50%;transform:translateX(-50%);background:var(--surface2);border:1px solid var(--border);padding:12px 20px;border-radius:var(--radius);font-size:13px;z-index:999;animation:fadeIn .3s;box-shadow:var(--shadow)}
+@keyframes fadeIn{from{opacity:0;transform:translateX(-50%) translateY(-10px)}to{opacity:1;transform:translateX(-50%) translateY(0)}}
+
+/* Search */
+.search-bar{position:relative;margin-bottom:16px}
+.search-bar input{width:100%;padding:10px 14px 10px 38px;background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius-sm);color:var(--text);font-size:14px;font-family:inherit;outline:none}
+.search-bar input:focus{border-color:var(--accent)}
+.search-bar svg{position:absolute;left:12px;top:50%;transform:translateY(-50%);width:16px;height:16px;color:var(--text3)}
+
+/* Filters */
+.filters{display:flex;gap:8px;overflow-x:auto;margin-bottom:16px;padding-bottom:4px;-webkit-overflow-scrolling:touch}
+.filters::-webkit-scrollbar{display:none}
+.filter-chip{flex-shrink:0;padding:6px 14px;border-radius:20px;font-size:12px;font-weight:500;border:1px solid var(--border);background:var(--surface);color:var(--text2);cursor:pointer;font-family:inherit;transition:all .2s}
+.filter-chip.active{background:var(--accent);border-color:var(--accent);color:#fff}
+
+/* Detail view */
+.detail-img{width:100%;aspect-ratio:16/10;border-radius:var(--radius);overflow:hidden;margin-bottom:16px;background:var(--surface2)}
+.detail-img img{width:100%;height:100%;object-fit:cover}
+.detail-row{display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border)}
+.detail-label{font-size:13px;color:var(--text2)}
+.detail-value{font-size:13px;font-weight:500}
+
+/* Fab */
+.fab{position:fixed;bottom:80px;right:calc(50% - 220px);width:52px;height:52px;border-radius:50%;background:linear-gradient(135deg,var(--accent),#7c6cf0);color:#fff;border:none;display:flex;align-items:center;justify-content:center;cursor:pointer;box-shadow:0 4px 20px rgba(108,92,231,0.4);z-index:90;transition:all .2s}
+.fab:hover{transform:scale(1.05)}
+.fab:active{transform:scale(0.95)}
+.fab svg{width:24px;height:24px}
+
+@media(min-width:481px){
+  .fab{right:calc(50% - 220px)}
+}
+@media(max-width:480px){
+  .fab{right:20px}
+}
+
+/* Page transition */
+.page{display:none;animation:pageFade .2s ease}
+.page.active{display:block}
+@keyframes pageFade{from{opacity:0}to{opacity:1}}
+
+/* Accent text */
+.text-accent{color:var(--accent2)}
+.text-green{color:var(--green)}
+.text-muted{color:var(--text2)}
+.text-sm{font-size:12px}
+.mt-8{margin-top:8px}
+.mt-16{margin-top:16px}
+.mb-8{margin-bottom:8px}
+.mb-16{margin-bottom:16px}
+.flex-between{display:flex;justify-content:space-between;align-items:center}
+</style>
+</head>
+<body>
+<div id="app">
+  <div class="topbar">
+    <h1>GarmentFlow</h1>
+    <div class="topbar-actions">
+      <button class="topbar-btn" onclick="exportToExcel()" title="Export to Excel">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+      </button>
+    </div>
+  </div>
+
+  <div class="content" id="content">
+    <!-- Pages injected by JS -->
+  </div>
+
+  <nav class="nav">
+    <button class="nav-item active" data-page="dashboard">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+      <span>Dashboard</span>
+    </button>
+    <button class="nav-item" data-page="products">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>
+      <span>Products</span>
+    </button>
+    <button class="nav-item" data-page="sales">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+      <span>Sales</span>
+    </button>
+    <button class="nav-item" data-page="buyers">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+      <span>Buyers</span>
+    </button>
+  </nav>
+</div>
+
+<script>
+// ═══════════════════════════════════════════
+// DATABASE (IndexedDB)
+// ═══════════════════════════════════════════
+const DB_NAME = 'GarmentFlowDB';
+const DB_VER = 1;
+let db;
+
+function openDB() {
+  return new Promise((resolve, reject) => {
+    const req = indexedDB.open(DB_NAME, DB_VER);
+    req.onupgradeneeded = e => {
+      const d = e.target.result;
+      if (!d.objectStoreNames.contains('products')) {
+        const ps = d.createObjectStore('products', { keyPath: 'id', autoIncrement: true });
+        ps.createIndex('design', 'design', { unique: false });
+        ps.createIndex('created', 'created', { unique: false });
+      }
+      if (!d.objectStoreNames.contains('sales')) {
+        const ss = d.createObjectStore('sales', { keyPath: 'id', autoIncrement: true });
+        ss.createIndex('productId', 'productId', { unique: false });
+        ss.createIndex('buyerId', 'buyerId', { unique: false });
+        ss.createIndex('date', 'date', { unique: false });
+      }
+      if (!d.objectStoreNames.contains('buyers')) {
+        const bs = d.createObjectStore('buyers', { keyPath: 'id', autoIncrement: true });
+        bs.createIndex('name', 'name', { unique: false });
+      }
+    };
+    req.onsuccess = e => { db = e.target.result; resolve(db); };
+    req.onerror = e => reject(e);
+  });
+}
+
+function dbAdd(store, data) {
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(store, 'readwrite');
+    const req = tx.objectStore(store).add(data);
+    req.onsuccess = () => resolve(req.result);
+    req.onerror = e => reject(e);
+  });
+}
+
+function dbGetAll(store) {
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(store, 'readonly');
+    const req = tx.objectStore(store).getAll();
+    req.onsuccess = () => resolve(req.result);
+    req.onerror = e => reject(e);
+  });
+}
+
+function dbGet(store, id) {
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(store, 'readonly');
+    const req = tx.objectStore(store).get(id);
+    req.onsuccess = () => resolve(req.result);
+    req.onerror = e => reject(e);
+  });
+}
+
+function dbUpdate(store, data) {
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(store, 'readwrite');
+    const req = tx.objectStore(store).put(data);
+    req.onsuccess = () => resolve(req.result);
+    req.onerror = e => reject(e);
+  });
+}
+
+function dbDelete(store, id) {
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(store, 'readwrite');
+    const req = tx.objectStore(store).delete(id);
+    req.onsuccess = () => resolve();
+    req.onerror = e => reject(e);
+  });
+}
+
+// ═══════════════════════════════════════════
+// STATE
+// ═══════════════════════════════════════════
+let currentPage = 'dashboard';
+let revenueChart = null;
+
+// ═══════════════════════════════════════════
+// NAVIGATION
+// ═══════════════════════════════════════════
+document.querySelectorAll('.nav-item').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.nav-item').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    currentPage = btn.dataset.page;
+    renderPage();
+  });
+});
+
+function navigate(page) {
+  currentPage = page;
+  document.querySelectorAll('.nav-item').forEach(b => {
+    b.classList.toggle('active', b.dataset.page === page);
+  });
+  renderPage();
+}
+
+// ═══════════════════════════════════════════
+// TOAST
+// ═══════════════════════════════════════════
+function toast(msg) {
+  const el = document.createElement('div');
+  el.className = 'toast';
+  el.textContent = msg;
+  document.body.appendChild(el);
+  setTimeout(() => el.remove(), 2500);
+}
+
+// ═══════════════════════════════════════════
+// RENDER ENGINE
+// ═══════════════════════════════════════════
+async function renderPage() {
+  const c = document.getElementById('content');
+  // Remove old FAB
+  document.querySelectorAll('.fab,.modal-overlay').forEach(e => e.remove());
+
+  switch (currentPage) {
+    case 'dashboard': await renderDashboard(c); break;
+    case 'products': await renderProducts(c); break;
+    case 'sales': await renderSales(c); break;
+    case 'buyers': await renderBuyers(c); break;
+  }
+}
+
+// ═══════════════════════════════════════════
+// DASHBOARD
+// ═══════════════════════════════════════════
+async function renderDashboard(c) {
+  const [products, sales, buyers] = await Promise.all([
+    dbGetAll('products'), dbGetAll('sales'), dbGetAll('buyers')
+  ]);
+
+  const totalRevenue = sales.reduce((s, x) => s + (x.acceptedQty * x.pricePerUnit), 0);
+  const totalOffered = sales.reduce((s, x) => s + x.offeredQty, 0);
+  const totalAccepted = sales.reduce((s, x) => s + x.acceptedQty, 0);
+  const acceptRate = totalOffered > 0 ? Math.round((totalAccepted / totalOffered) * 100) : 0;
+
+  // Recent 7 days revenue
+  const now = Date.now();
+  const weekAgo = now - 7 * 86400000;
+  const recentSales = sales.filter(s => new Date(s.date).getTime() > weekAgo);
+  const weekRevenue = recentSales.reduce((s, x) => s + (x.acceptedQty * x.pricePerUnit), 0);
+
+  c.innerHTML = `
+    <div style="margin-bottom:8px">
+      <span class="text-muted text-sm">Welcome back</span>
+      <h2 style="font-size:24px;font-weight:700;margin-top:2px">Overview</h2>
+    </div>
+    <div class="stats-grid">
+      <div class="stat-card purple">
+        <div class="stat-label">Total Revenue</div>
+        <div class="stat-value">${formatCurrency(totalRevenue)}</div>
+        <div class="stat-sub">${sales.length} sales recorded</div>
+      </div>
+      <div class="stat-card green">
+        <div class="stat-label">This Week</div>
+        <div class="stat-value">${formatCurrency(weekRevenue)}</div>
+        <div class="stat-sub">${recentSales.length} sales</div>
+      </div>
+      <div class="stat-card orange">
+        <div class="stat-label">Accept Rate</div>
+        <div class="stat-value">${acceptRate}%</div>
+        <div class="stat-sub">${totalAccepted} of ${totalOffered} pieces</div>
+      </div>
+      <div class="stat-card pink">
+        <div class="stat-label">Catalogue</div>
+        <div class="stat-value">${products.length}</div>
+        <div class="stat-sub">${buyers.length} buyers</div>
+      </div>
+    </div>
+
+    <div class="chart-wrap">
+      <div class="flex-between mb-8">
+        <span class="card-title">Revenue (7 days)</span>
+      </div>
+      <canvas id="revenueChart" height="180"></canvas>
+    </div>
+
+    <div class="section-header">
+      <span class="section-title">Recent Sales</span>
+      <button class="section-link" onclick="navigate('sales')">See all</button>
+    </div>
+    ${sales.length === 0 ? `
+      <div class="empty">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+        <h3>No sales yet</h3>
+        <p>Add your first product and record a sale to see data here</p>
+      </div>
+    ` : sales.slice(-5).reverse().map(s => `
+      <div class="card" style="cursor:pointer" onclick="viewSale(${s.id})">
+        <div class="sale-row" style="border:none;padding:0">
+          <div class="sale-info">
+            <div class="sale-buyer">${escHtml(s.buyerName || 'Unknown')}</div>
+            <div class="sale-detail">${escHtml(s.productName || '')} &middot; ${s.acceptedQty}/${s.offeredQty} pcs &middot; ${formatDate(s.date)}</div>
+          </div>
+          <div class="sale-amount">${formatCurrency(s.acceptedQty * s.pricePerUnit)}</div>
+        </div>
+      </div>
+    `).join('')}
+  `;
+
+  // Revenue chart
+  buildRevenueChart(sales);
+}
+
+function buildRevenueChart(sales) {
+  const ctx = document.getElementById('revenueChart');
+  if (!ctx) return;
+  if (revenueChart) revenueChart.destroy();
+
+  const days = [];
+  const data = [];
+  for (let i = 6; i >= 0; i--) {
+    const d = new Date(Date.now() - i * 86400000);
+    const key = d.toISOString().slice(0, 10);
+    days.push(d.toLocaleDateString('en', { weekday: 'short' }));
+    const dayRevenue = sales
+      .filter(s => s.date && s.date.startsWith(key))
+      .reduce((sum, s) => sum + (s.acceptedQty * s.pricePerUnit), 0);
+    data.push(dayRevenue);
+  }
+
+  revenueChart = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: days,
+      datasets: [{
+        data: data,
+        backgroundColor: 'rgba(108,92,231,0.5)',
+        borderColor: '#6c5ce7',
+        borderWidth: 1,
+        borderRadius: 6,
+        borderSkipped: false
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
+      scales: {
+        x: { grid: { display: false }, ticks: { color: '#68687a', font: { size: 11 } } },
+        y: { grid: { color: '#2e2e3e' }, ticks: { color: '#68687a', font: { size: 11 }, callback: v => formatCurrencyShort(v) } }
+      }
+    }
+  });
+}
+
+// ═══════════════════════════════════════════
+// PRODUCTS PAGE
+// ═══════════════════════════════════════════
+async function renderProducts(c) {
+  const products = await dbGetAll('products');
+  const sales = await dbGetAll('sales');
+
+  c.innerHTML = `
+    <div class="section-header" style="margin-top:0">
+      <span class="section-title">Products (${products.length})</span>
+    </div>
+    <div class="search-bar">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      <input type="text" placeholder="Search products..." oninput="filterProducts(this.value)">
+    </div>
+    <div id="productList">
+      ${products.length === 0 ? `
+        <div class="empty">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>
+          <h3>No products yet</h3>
+          <p>Tap + to add your first garment</p>
+        </div>
+      ` : products.reverse().map(p => {
+        const pSales = sales.filter(s => s.productId === p.id);
+        const totalSold = pSales.reduce((s, x) => s + x.acceptedQty, 0);
+        return `
+        <div class="card" style="cursor:pointer" onclick="viewProduct(${p.id})">
+          <div class="product-card">
+            <div class="product-thumb">${p.photo ? `<img src="${p.photo}" alt="">` : ''}</div>
+            <div class="product-info">
+              <div class="product-name">${escHtml(p.name)}</div>
+              <div class="product-meta">${escHtml(p.design)} &middot; ${escHtml(p.sizes)} &middot; ${totalSold} sold</div>
+            </div>
+            <div class="product-price">${formatCurrency(p.price)}</div>
+          </div>
+        </div>`;
+      }).join('')}
+    </div>
+  `;
+
+  addFab(() => showAddProductModal());
+}
+
+function filterProducts(query) {
+  // Simple filter — re-render could be smarter but works fine
+  const q = query.toLowerCase();
+  document.querySelectorAll('#productList .card').forEach(card => {
+    card.style.display = card.textContent.toLowerCase().includes(q) ? '' : 'none';
+  });
+}
+
+// ═══════════════════════════════════════════
+// SALES PAGE
+// ═══════════════════════════════════════════
+async function renderSales(c) {
+  const sales = await dbGetAll('sales');
+
+  // Get unique design types for filters
+  const designs = [...new Set(sales.map(s => s.designType).filter(Boolean))];
+
+  c.innerHTML = `
+    <div class="section-header" style="margin-top:0">
+      <span class="section-title">Sales Log (${sales.length})</span>
+    </div>
+    <div class="search-bar">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      <input type="text" placeholder="Search by buyer, product..." oninput="filterSales(this.value)">
+    </div>
+    <div class="filters" id="saleFilters">
+      <button class="filter-chip active" onclick="filterSalesByDesign(this, '')">All</button>
+      ${designs.map(d => `<button class="filter-chip" onclick="filterSalesByDesign(this, '${escHtml(d)}')">${escHtml(d)}</button>`).join('')}
+    </div>
+    <div id="salesList">
+      ${sales.length === 0 ? `
+        <div class="empty">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+          <h3>No sales recorded</h3>
+          <p>Record your first sale to start tracking income</p>
+        </div>
+      ` : sales.reverse().map(s => `
+        <div class="card sale-card" data-design="${escHtml(s.designType || '')}" style="cursor:pointer" onclick="viewSale(${s.id})">
+          <div class="flex-between mb-8">
+            <div>
+              <div class="card-title">${escHtml(s.buyerName || 'Unknown')}</div>
+              <div class="card-subtitle">${escHtml(s.productName || '')} &middot; ${formatDate(s.date)}</div>
+            </div>
+            <span class="badge ${s.acceptedQty === s.offeredQty ? 'badge-green' : s.acceptedQty > 0 ? 'badge-orange' : 'badge-red'}">
+              ${s.acceptedQty === s.offeredQty ? 'Full' : s.acceptedQty > 0 ? 'Partial' : 'Rejected'}
+            </span>
+          </div>
+          <div class="flex-between">
+            <span class="text-sm text-muted">Offered: ${s.offeredQty} &rarr; Accepted: ${s.acceptedQty}</span>
+            <span class="text-green" style="font-weight:600">${formatCurrency(s.acceptedQty * s.pricePerUnit)}</span>
+          </div>
+        </div>
+      `).join('')}
+    </div>
+  `;
+
+  addFab(() => showAddSaleModal());
+}
+
+function filterSales(query) {
+  const q = query.toLowerCase();
+  document.querySelectorAll('#salesList .card').forEach(card => {
+    card.style.display = card.textContent.toLowerCase().includes(q) ? '' : 'none';
+  });
+}
+
+function filterSalesByDesign(btn, design) {
+  document.querySelectorAll('#saleFilters .filter-chip').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  document.querySelectorAll('#salesList .sale-card').forEach(card => {
+    if (!design || card.dataset.design === design) card.style.display = '';
+    else card.style.display = 'none';
+  });
+}
+
+// ═══════════════════════════════════════════
+// BUYERS PAGE
+// ═══════════════════════════════════════════
+async function renderBuyers(c) {
+  const buyers = await dbGetAll('buyers');
+  const sales = await dbGetAll('sales');
+
+  c.innerHTML = `
+    <div class="section-header" style="margin-top:0">
+      <span class="section-title">Buyers (${buyers.length})</span>
+    </div>
+    <div class="search-bar">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      <input type="text" placeholder="Search buyers..." oninput="filterBuyers(this.value)">
+    </div>
+    <div id="buyerList">
+      ${buyers.length === 0 ? `
+        <div class="empty">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
+          <h3>No buyers yet</h3>
+          <p>Buyers are added when you record a sale</p>
+        </div>
+      ` : buyers.reverse().map(b => {
+        const bSales = sales.filter(s => s.buyerId === b.id);
+        const totalSpent = bSales.reduce((s, x) => s + (x.acceptedQty * x.pricePerUnit), 0);
+        return `
+        <div class="card" style="cursor:pointer" onclick="viewBuyer(${b.id})">
+          <div class="flex-between">
+            <div>
+              <div class="card-title">${escHtml(b.name)}</div>
+              <div class="card-subtitle">${escHtml(b.company || '')} ${b.phone ? '&middot; ' + escHtml(b.phone) : ''}</div>
+            </div>
+            <div style="text-align:right">
+              <div class="text-green" style="font-weight:600">${formatCurrency(totalSpent)}</div>
+              <div class="text-sm text-muted">${bSales.length} orders</div>
+            </div>
+          </div>
+        </div>`;
+      }).join('')}
+    </div>
+  `;
+
+  addFab(() => showAddBuyerModal());
+}
+
+function filterBuyers(query) {
+  const q = query.toLowerCase();
+  document.querySelectorAll('#buyerList .card').forEach(card => {
+    card.style.display = card.textContent.toLowerCase().includes(q) ? '' : 'none';
+  });
+}
+
+// ═══════════════════════════════════════════
+// ADD PRODUCT MODAL
+// ═══════════════════════════════════════════
+function showAddProductModal(existing) {
+  const isEdit = !!existing;
+  const overlay = document.createElement('div');
+  overlay.className = 'modal-overlay';
+  overlay.innerHTML = `
+    <div class="modal">
+      <div class="modal-handle"></div>
+      <div class="modal-title">${isEdit ? 'Edit' : 'Add'} Product</div>
+      <form id="productForm">
+        <div class="form-group">
+          <label class="form-label">Product Photo</label>
+          <div class="photo-upload" onclick="this.querySelector('input').click()">
+            ${existing?.photo ? `<img src="${existing.photo}" id="photoPreview">` : ''}
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" id="photoIcon" ${existing?.photo ? 'style="display:none"' : ''}><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+            <span id="photoText" ${existing?.photo ? 'style="display:none"' : ''}>Tap to upload photo</span>
+            <input type="file" accept="image/*" onchange="handlePhoto(this)">
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Product Name</label>
+          <input class="form-input" id="pName" placeholder="e.g. Slim Fit Polo" required value="${escHtml(existing?.name || '')}">
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Design Type</label>
+            <select class="form-input" id="pDesign">
+              <option value="">Select...</option>
+              ${['Polo', 'T-Shirt', 'Shirt', 'Trouser', 'Jeans', 'Jacket', 'Hoodie', 'Dress', 'Skirt', 'Other'].map(d =>
+                `<option ${existing?.design === d ? 'selected' : ''}>${d}</option>`
+              ).join('')}
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Price per Unit</label>
+            <input class="form-input" id="pPrice" type="number" step="0.01" placeholder="0.00" required value="${existing?.price || ''}">
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Sizes Available</label>
+            <input class="form-input" id="pSizes" placeholder="S, M, L, XL" value="${escHtml(existing?.sizes || '')}">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Target</label>
+            <select class="form-input" id="pTarget">
+              <option value="">Select...</option>
+              ${['Men', 'Women', 'Unisex', 'Kids'].map(t =>
+                `<option ${existing?.target === t ? 'selected' : ''}>${t}</option>`
+              ).join('')}
+            </select>
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Notes</label>
+          <textarea class="form-input" id="pNotes" placeholder="Material, color options, etc.">${escHtml(existing?.notes || '')}</textarea>
+        </div>
+        <button type="submit" class="btn btn-primary btn-full">${isEdit ? 'Update' : 'Add'} Product</button>
+        ${isEdit ? `<button type="button" class="btn btn-danger btn-full mt-8" onclick="deleteProduct(${existing.id})">Delete Product</button>` : ''}
+      </form>
+    </div>
+  `;
+  document.body.appendChild(overlay);
+  overlay.addEventListener('click', e => { if (e.target === overlay) overlay.remove(); });
+
+  document.getElementById('productForm').addEventListener('submit', async e => {
+    e.preventDefault();
+    const data = {
+      name: document.getElementById('pName').value,
+      design: document.getElementById('pDesign').value,
+      price: parseFloat(document.getElementById('pPrice').value) || 0,
+      sizes: document.getElementById('pSizes').value,
+      target: document.getElementById('pTarget').value,
+      notes: document.getElementById('pNotes').value,
+      photo: document.getElementById('photoPreview')?.src || existing?.photo || '',
+      created: existing?.created || new Date().toISOString()
+    };
+    if (isEdit) { data.id = existing.id; await dbUpdate('products', data); }
+    else await dbAdd('products', data);
+    overlay.remove();
+    toast(isEdit ? 'Product updated' : 'Product added');
+    renderPage();
+  });
+}
+
+function handlePhoto(input) {
+  const file = input.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    const container = input.closest('.photo-upload');
+    let img = container.querySelector('img');
+    if (!img) {
+      img = document.createElement('img');
+      img.id = 'photoPreview';
+      container.appendChild(img);
+    }
+    img.src = e.target.result;
+    container.querySelector('#photoIcon')?.style.setProperty('display', 'none');
+    container.querySelector('#photoText')?.style.setProperty('display', 'none');
+  };
+  reader.readAsDataURL(file);
+}
+
+async function viewProduct(id) {
+  const p = await dbGet('products', id);
+  if (!p) return;
+  const sales = (await dbGetAll('sales')).filter(s => s.productId === id);
+  const totalSold = sales.reduce((s, x) => s + x.acceptedQty, 0);
+  const totalRevenue = sales.reduce((s, x) => s + (x.acceptedQty * x.pricePerUnit), 0);
+
+  const overlay = document.createElement('div');
+  overlay.className = 'modal-overlay';
+  overlay.innerHTML = `
+    <div class="modal">
+      <div class="modal-handle"></div>
+      ${p.photo ? `<div class="detail-img"><img src="${p.photo}"></div>` : ''}
+      <div class="flex-between mb-16">
+        <div>
+          <h2 style="font-size:20px;font-weight:700">${escHtml(p.name)}</h2>
+          <span class="badge badge-purple mt-8">${escHtml(p.design || 'No type')}</span>
+        </div>
+        <button class="btn btn-secondary btn-sm" onclick="this.closest('.modal-overlay').remove(); showAddProductModal(${JSON.stringify(p).replace(/"/g, '&quot;')})">Edit</button>
+      </div>
+      <div class="detail-row"><span class="detail-label">Price</span><span class="detail-value text-green">${formatCurrency(p.price)}</span></div>
+      <div class="detail-row"><span class="detail-label">Sizes</span><span class="detail-value">${escHtml(p.sizes || '-')}</span></div>
+      <div class="detail-row"><span class="detail-label">Target</span><span class="detail-value">${escHtml(p.target || '-')}</span></div>
+      <div class="detail-row"><span class="detail-label">Total Sold</span><span class="detail-value">${totalSold} pieces</span></div>
+      <div class="detail-row"><span class="detail-label">Revenue</span><span class="detail-value text-green">${formatCurrency(totalRevenue)}</span></div>
+      ${p.notes ? `<div class="detail-row"><span class="detail-label">Notes</span><span class="detail-value">${escHtml(p.notes)}</span></div>` : ''}
+      <div class="section-header"><span class="section-title">Sales History</span></div>
+      ${sales.length === 0 ? '<p class="text-muted text-sm">No sales for this product yet</p>' :
+        sales.reverse().map(s => `
+          <div class="card">
+            <div class="flex-between">
+              <div><div class="card-title">${escHtml(s.buyerName)}</div><div class="card-subtitle">${formatDate(s.date)} &middot; ${s.acceptedQty}/${s.offeredQty} pcs</div></div>
+              <span class="text-green" style="font-weight:600">${formatCurrency(s.acceptedQty * s.pricePerUnit)}</span>
+            </div>
+          </div>
+        `).join('')}
+    </div>
+  `;
+  document.body.appendChild(overlay);
+  overlay.addEventListener('click', e => { if (e.target === overlay) overlay.remove(); });
+}
+
+async function deleteProduct(id) {
+  if (!confirm('Delete this product? This cannot be undone.')) return;
+  await dbDelete('products', id);
+  document.querySelectorAll('.modal-overlay').forEach(e => e.remove());
+  toast('Product deleted');
+  renderPage();
+}
+
+// ═══════════════════════════════════════════
+// ADD SALE MODAL
+// ═══════════════════════════════════════════
+async function showAddSaleModal() {
+  const products = await dbGetAll('products');
+  const buyers = await dbGetAll('buyers');
+
+  const overlay = document.createElement('div');
+  overlay.className = 'modal-overlay';
+  overlay.innerHTML = `
+    <div class="modal">
+      <div class="modal-handle"></div>
+      <div class="modal-title">Record Sale</div>
+      <form id="saleForm">
+        <div class="form-group">
+          <label class="form-label">Product</label>
+          <select class="form-input" id="sProduct" required>
+            <option value="">Select product...</option>
+            ${products.map(p => `<option value="${p.id}" data-price="${p.price}" data-design="${escHtml(p.design)}">${escHtml(p.name)} (${formatCurrency(p.price)})</option>`).join('')}
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Buyer</label>
+          <select class="form-input" id="sBuyer">
+            <option value="">Select or type new...</option>
+            ${buyers.map(b => `<option value="${b.id}">${escHtml(b.name)}${b.company ? ' - ' + escHtml(b.company) : ''}</option>`).join('')}
+            <option value="__new__">+ Add new buyer</option>
+          </select>
+        </div>
+        <div id="newBuyerFields" style="display:none">
+          <div class="form-group">
+            <label class="form-label">Buyer Name</label>
+            <input class="form-input" id="sNewBuyerName" placeholder="Full name">
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">Company</label>
+              <input class="form-input" id="sNewBuyerCompany" placeholder="Company">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Phone</label>
+              <input class="form-input" id="sNewBuyerPhone" placeholder="+1...">
+            </div>
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Qty Offered</label>
+            <input class="form-input" id="sOffered" type="number" min="0" placeholder="0" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Qty Accepted</label>
+            <input class="form-input" id="sAccepted" type="number" min="0" placeholder="0" required>
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Price per Unit</label>
+            <input class="form-input" id="sSalePrice" type="number" step="0.01" placeholder="Auto from product">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Date</label>
+            <input class="form-input" id="sDate" type="date" value="${new Date().toISOString().slice(0,10)}">
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Notes</label>
+          <textarea class="form-input" id="sNotes" placeholder="Any details about this sale..."></textarea>
+        </div>
+        <div class="card" style="background:var(--accent-glow);border-color:var(--accent);margin-bottom:16px">
+          <div class="flex-between">
+            <span class="text-sm">Total Income</span>
+            <span id="saleTotalPreview" style="font-size:18px;font-weight:700;color:var(--green)">$0.00</span>
+          </div>
+        </div>
+        <button type="submit" class="btn btn-primary btn-full">Record Sale</button>
+      </form>
+    </div>
+  `;
+  document.body.appendChild(overlay);
+  overlay.addEventListener('click', e => { if (e.target === overlay) overlay.remove(); });
+
+  // Toggle new buyer fields
+  document.getElementById('sBuyer').addEventListener('change', function() {
+    document.getElementById('newBuyerFields').style.display = this.value === '__new__' ? '' : 'none';
+  });
+
+  // Auto-fill price from product
+  document.getElementById('sProduct').addEventListener('change', function() {
+    const opt = this.options[this.selectedIndex];
+    if (opt.dataset.price) document.getElementById('sSalePrice').value = opt.dataset.price;
+    updateSalePreview();
+  });
+
+  // Live total preview
+  ['sAccepted', 'sSalePrice'].forEach(id => {
+    document.getElementById(id).addEventListener('input', updateSalePreview);
+  });
+
+  function updateSalePreview() {
+    const qty = parseInt(document.getElementById('sAccepted').value) || 0;
+    const price = parseFloat(document.getElementById('sSalePrice').value) || 0;
+    document.getElementById('saleTotalPreview').textContent = formatCurrency(qty * price);
+  }
+
+  document.getElementById('saleForm').addEventListener('submit', async e => {
+    e.preventDefault();
+
+    let buyerId, buyerName;
+    const buyerSelect = document.getElementById('sBuyer');
+
+    if (buyerSelect.value === '__new__') {
+      buyerName = document.getElementById('sNewBuyerName').value;
+      if (!buyerName) { toast('Enter buyer name'); return; }
+      buyerId = await dbAdd('buyers', {
+        name: buyerName,
+        company: document.getElementById('sNewBuyerCompany').value,
+        phone: document.getElementById('sNewBuyerPhone').value,
+        created: new Date().toISOString()
+      });
+    } else {
+      buyerId = parseInt(buyerSelect.value);
+      buyerName = buyerSelect.options[buyerSelect.selectedIndex].textContent.split(' - ')[0];
+    }
+
+    const productSelect = document.getElementById('sProduct');
+    const productId = parseInt(productSelect.value);
+    const productName = productSelect.options[productSelect.selectedIndex].textContent.split(' (')[0];
+    const designType = productSelect.options[productSelect.selectedIndex].dataset?.design || '';
+
+    const sale = {
+      productId,
+      productName,
+      buyerId,
+      buyerName,
+      designType,
+      offeredQty: parseInt(document.getElementById('sOffered').value) || 0,
+      acceptedQty: parseInt(document.getElementById('sAccepted').value) || 0,
+      pricePerUnit: parseFloat(document.getElementById('sSalePrice').value) || 0,
+      date: document.getElementById('sDate').value,
+      notes: document.getElementById('sNotes').value,
+      created: new Date().toISOString()
+    };
+
+    await dbAdd('sales', sale);
+    overlay.remove();
+    toast(`Sale recorded: ${formatCurrency(sale.acceptedQty * sale.pricePerUnit)}`);
+    renderPage();
+  });
+}
+
+async function viewSale(id) {
+  const s = await dbGet('sales', id);
+  if (!s) return;
+  const total = s.acceptedQty * s.pricePerUnit;
+
+  const overlay = document.createElement('div');
+  overlay.className = 'modal-overlay';
+  overlay.innerHTML = `
+    <div class="modal">
+      <div class="modal-handle"></div>
+      <div class="flex-between mb-16">
+        <div>
+          <h2 style="font-size:20px;font-weight:700">Sale Details</h2>
+          <span class="text-sm text-muted">${formatDate(s.date)}</span>
+        </div>
+        <span class="badge ${s.acceptedQty === s.offeredQty ? 'badge-green' : s.acceptedQty > 0 ? 'badge-orange' : 'badge-red'}">
+          ${s.acceptedQty === s.offeredQty ? 'Full Accept' : s.acceptedQty > 0 ? 'Partial' : 'Rejected'}
+        </span>
+      </div>
+      <div class="detail-row"><span class="detail-label">Product</span><span class="detail-value">${escHtml(s.productName)}</span></div>
+      <div class="detail-row"><span class="detail-label">Design Type</span><span class="detail-value">${escHtml(s.designType || '-')}</span></div>
+      <div class="detail-row"><span class="detail-label">Buyer</span><span class="detail-value">${escHtml(s.buyerName)}</span></div>
+      <div class="detail-row"><span class="detail-label">Offered</span><span class="detail-value">${s.offeredQty} pieces</span></div>
+      <div class="detail-row"><span class="detail-label">Accepted</span><span class="detail-value">${s.acceptedQty} pieces</span></div>
+      <div class="detail-row"><span class="detail-label">Price / Unit</span><span class="detail-value">${formatCurrency(s.pricePerUnit)}</span></div>
+      <div class="detail-row" style="border-bottom:none"><span class="detail-label" style="font-weight:600;color:var(--text)">Total Income</span><span class="detail-value text-green" style="font-size:18px">${formatCurrency(total)}</span></div>
+      ${s.notes ? `<div class="card mt-8"><span class="text-sm text-muted">Notes:</span><p class="mt-8 text-sm">${escHtml(s.notes)}</p></div>` : ''}
+      <button class="btn btn-danger btn-full mt-16" onclick="deleteSale(${s.id})">Delete Sale</button>
+    </div>
+  `;
+  document.body.appendChild(overlay);
+  overlay.addEventListener('click', e => { if (e.target === overlay) overlay.remove(); });
+}
+
+async function deleteSale(id) {
+  if (!confirm('Delete this sale record?')) return;
+  await dbDelete('sales', id);
+  document.querySelectorAll('.modal-overlay').forEach(e => e.remove());
+  toast('Sale deleted');
+  renderPage();
+}
+
+// ═══════════════════════════════════════════
+// ADD BUYER MODAL
+// ═══════════════════════════════════════════
+function showAddBuyerModal(existing) {
+  const isEdit = !!existing;
+  const overlay = document.createElement('div');
+  overlay.className = 'modal-overlay';
+  overlay.innerHTML = `
+    <div class="modal">
+      <div class="modal-handle"></div>
+      <div class="modal-title">${isEdit ? 'Edit' : 'Add'} Buyer</div>
+      <form id="buyerForm">
+        <div class="form-group">
+          <label class="form-label">Name</label>
+          <input class="form-input" id="bName" placeholder="Full name" required value="${escHtml(existing?.name || '')}">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Company / Shop Name</label>
+          <input class="form-input" id="bCompany" placeholder="Business name" value="${escHtml(existing?.company || '')}">
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Phone</label>
+            <input class="form-input" id="bPhone" type="tel" placeholder="+1..." value="${escHtml(existing?.phone || '')}">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Email</label>
+            <input class="form-input" id="bEmail" type="email" placeholder="email@..." value="${escHtml(existing?.email || '')}">
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Location / Address</label>
+          <input class="form-input" id="bLocation" placeholder="City, area..." value="${escHtml(existing?.location || '')}">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Notes</label>
+          <textarea class="form-input" id="bNotes" placeholder="Preferences, payment terms...">${escHtml(existing?.notes || '')}</textarea>
+        </div>
+        <button type="submit" class="btn btn-primary btn-full">${isEdit ? 'Update' : 'Add'} Buyer</button>
+        ${isEdit ? `<button type="button" class="btn btn-danger btn-full mt-8" onclick="deleteBuyer(${existing.id})">Delete Buyer</button>` : ''}
+      </form>
+    </div>
+  `;
+  document.body.appendChild(overlay);
+  overlay.addEventListener('click', e => { if (e.target === overlay) overlay.remove(); });
+
+  document.getElementById('buyerForm').addEventListener('submit', async e => {
+    e.preventDefault();
+    const data = {
+      name: document.getElementById('bName').value,
+      company: document.getElementById('bCompany').value,
+      phone: document.getElementById('bPhone').value,
+      email: document.getElementById('bEmail').value,
+      location: document.getElementById('bLocation').value,
+      notes: document.getElementById('bNotes').value,
+      created: existing?.created || new Date().toISOString()
+    };
+    if (isEdit) { data.id = existing.id; await dbUpdate('buyers', data); }
+    else await dbAdd('buyers', data);
+    overlay.remove();
+    toast(isEdit ? 'Buyer updated' : 'Buyer added');
+    renderPage();
+  });
+}
+
+async function viewBuyer(id) {
+  const b = await dbGet('buyers', id);
+  if (!b) return;
+  const sales = (await dbGetAll('sales')).filter(s => s.buyerId === id);
+  const totalSpent = sales.reduce((s, x) => s + (x.acceptedQty * x.pricePerUnit), 0);
+  const totalAccepted = sales.reduce((s, x) => s + x.acceptedQty, 0);
+
+  const overlay = document.createElement('div');
+  overlay.className = 'modal-overlay';
+  overlay.innerHTML = `
+    <div class="modal">
+      <div class="modal-handle"></div>
+      <div class="flex-between mb-16">
+        <div>
+          <h2 style="font-size:20px;font-weight:700">${escHtml(b.name)}</h2>
+          ${b.company ? `<span class="text-sm text-muted">${escHtml(b.company)}</span>` : ''}
+        </div>
+        <button class="btn btn-secondary btn-sm" onclick="this.closest('.modal-overlay').remove(); showAddBuyerModal(${JSON.stringify(b).replace(/"/g, '&quot;')})">Edit</button>
+      </div>
+      ${b.phone ? `<div class="detail-row"><span class="detail-label">Phone</span><span class="detail-value">${escHtml(b.phone)}</span></div>` : ''}
+      ${b.email ? `<div class="detail-row"><span class="detail-label">Email</span><span class="detail-value">${escHtml(b.email)}</span></div>` : ''}
+      ${b.location ? `<div class="detail-row"><span class="detail-label">Location</span><span class="detail-value">${escHtml(b.location)}</span></div>` : ''}
+      <div class="detail-row"><span class="detail-label">Total Spent</span><span class="detail-value text-green">${formatCurrency(totalSpent)}</span></div>
+      <div class="detail-row"><span class="detail-label">Total Pieces</span><span class="detail-value">${totalAccepted}</span></div>
+      ${b.notes ? `<div class="detail-row"><span class="detail-label">Notes</span><span class="detail-value">${escHtml(b.notes)}</span></div>` : ''}
+      <div class="section-header"><span class="section-title">Order History</span></div>
+      ${sales.length === 0 ? '<p class="text-muted text-sm">No orders from this buyer yet</p>' :
+        sales.reverse().map(s => `
+          <div class="card">
+            <div class="flex-between">
+              <div><div class="card-title">${escHtml(s.productName)}</div><div class="card-subtitle">${formatDate(s.date)} &middot; ${s.acceptedQty} pcs</div></div>
+              <span class="text-green" style="font-weight:600">${formatCurrency(s.acceptedQty * s.pricePerUnit)}</span>
+            </div>
+          </div>
+        `).join('')}
+    </div>
+  `;
+  document.body.appendChild(overlay);
+  overlay.addEventListener('click', e => { if (e.target === overlay) overlay.remove(); });
+}
+
+async function deleteBuyer(id) {
+  if (!confirm('Delete this buyer?')) return;
+  await dbDelete('buyers', id);
+  document.querySelectorAll('.modal-overlay').forEach(e => e.remove());
+  toast('Buyer deleted');
+  renderPage();
+}
+
+// ═══════════════════════════════════════════
+// EXCEL EXPORT
+// ═══════════════════════════════════════════
+async function exportToExcel() {
+  const [products, sales, buyers] = await Promise.all([
+    dbGetAll('products'), dbGetAll('sales'), dbGetAll('buyers')
+  ]);
+
+  const wb = XLSX.utils.book_new();
+
+  // Sales sheet
+  const salesData = sales.map(s => ({
+    'Date': s.date,
+    'Product': s.productName,
+    'Design Type': s.designType,
+    'Buyer': s.buyerName,
+    'Qty Offered': s.offeredQty,
+    'Qty Accepted': s.acceptedQty,
+    'Price/Unit': s.pricePerUnit,
+    'Total Income': s.acceptedQty * s.pricePerUnit,
+    'Accept Rate': s.offeredQty > 0 ? Math.round((s.acceptedQty / s.offeredQty) * 100) + '%' : '0%',
+    'Notes': s.notes || ''
+  }));
+  const ws1 = XLSX.utils.json_to_sheet(salesData);
+  XLSX.utils.book_append_sheet(wb, ws1, 'Sales');
+
+  // Products sheet
+  const prodData = products.map(p => ({
+    'Name': p.name,
+    'Design': p.design,
+    'Price': p.price,
+    'Sizes': p.sizes,
+    'Target': p.target,
+    'Notes': p.notes || '',
+    'Added': p.created ? p.created.slice(0, 10) : ''
+  }));
+  const ws2 = XLSX.utils.json_to_sheet(prodData);
+  XLSX.utils.book_append_sheet(wb, ws2, 'Products');
+
+  // Buyers sheet
+  const buyerData = buyers.map(b => {
+    const bSales = sales.filter(s => s.buyerId === b.id);
+    return {
+      'Name': b.name,
+      'Company': b.company || '',
+      'Phone': b.phone || '',
+      'Email': b.email || '',
+      'Location': b.location || '',
+      'Total Orders': bSales.length,
+      'Total Spent': bSales.reduce((s, x) => s + (x.acceptedQty * x.pricePerUnit), 0),
+      'Notes': b.notes || ''
+    };
+  });
+  const ws3 = XLSX.utils.json_to_sheet(buyerData);
+  XLSX.utils.book_append_sheet(wb, ws3, 'Buyers');
+
+  // Summary sheet
+  const totalRevenue = sales.reduce((s, x) => s + (x.acceptedQty * x.pricePerUnit), 0);
+  const totalOffered = sales.reduce((s, x) => s + x.offeredQty, 0);
+  const totalAccepted = sales.reduce((s, x) => s + x.acceptedQty, 0);
+  const summaryData = [
+    { 'Metric': 'Total Revenue', 'Value': totalRevenue },
+    { 'Metric': 'Total Sales', 'Value': sales.length },
+    { 'Metric': 'Total Products', 'Value': products.length },
+    { 'Metric': 'Total Buyers', 'Value': buyers.length },
+    { 'Metric': 'Pieces Offered', 'Value': totalOffered },
+    { 'Metric': 'Pieces Accepted', 'Value': totalAccepted },
+    { 'Metric': 'Accept Rate', 'Value': totalOffered > 0 ? Math.round((totalAccepted / totalOffered) * 100) + '%' : '0%' },
+    { 'Metric': 'Exported On', 'Value': new Date().toLocaleString() }
+  ];
+  const ws4 = XLSX.utils.json_to_sheet(summaryData);
+  XLSX.utils.book_append_sheet(wb, ws4, 'Summary');
+
+  XLSX.writeFile(wb, `GarmentFlow_Export_${new Date().toISOString().slice(0,10)}.xlsx`);
+  toast('Excel exported!');
+}
+
+// ═══════════════════════════════════════════
+// HELPERS
+// ═══════════════════════════════════════════
+function formatCurrency(n) {
+  return '$' + (n || 0).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+}
+
+function formatCurrencyShort(n) {
+  if (n >= 1000000) return '$' + (n / 1000000).toFixed(1) + 'M';
+  if (n >= 1000) return '$' + (n / 1000).toFixed(1) + 'K';
+  return '$' + n;
+}
+
+function formatDate(d) {
+  if (!d) return '';
+  return new Date(d + 'T00:00:00').toLocaleDateString('en', { month: 'short', day: 'numeric', year: 'numeric' });
+}
+
+function escHtml(s) {
+  if (!s) return '';
+  const d = document.createElement('div');
+  d.textContent = s;
+  return d.innerHTML;
+}
+
+function addFab(onclick) {
+  document.querySelectorAll('.fab').forEach(e => e.remove());
+  const fab = document.createElement('button');
+  fab.className = 'fab';
+  fab.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>';
+  fab.onclick = onclick;
+  document.body.appendChild(fab);
+}
+
+// ═══════════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════════
+(async () => {
+  await openDB();
+  renderPage();
+})();
+
+// Register service worker
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('/sw.js').catch(() => {});
+}
+</script>
+</body>
+</html>
