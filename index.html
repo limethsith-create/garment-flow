@@ -222,9 +222,9 @@ textarea.form-input{resize:vertical;min-height:80px}
 </div>
 
 <script>
-// ═══════════════════════════════════════════
+// âââââââââââââââââââââââââââââââââââââââââââ
 // DATABASE (IndexedDB)
-// ═══════════════════════════════════════════
+// âââââââââââââââââââââââââââââââââââââââââââ
 const DB_NAME = 'GarmentFlowDB';
 const DB_VER = 1;
 let db;
@@ -300,15 +300,15 @@ function dbDelete(store, id) {
   });
 }
 
-// ═══════════════════════════════════════════
+// âââââââââââââââââââââââââââââââââââââââââââ
 // STATE
-// ═══════════════════════════════════════════
+// âââââââââââââââââââââââââââââââââââââââââââ
 let currentPage = 'dashboard';
 let revenueChart = null;
 
-// ═══════════════════════════════════════════
+// âââââââââââââââââââââââââââââââââââââââââââ
 // NAVIGATION
-// ═══════════════════════════════════════════
+// âââââââââââââââââââââââââââââââââââââââââââ
 document.querySelectorAll('.nav-item').forEach(btn => {
   btn.addEventListener('click', () => {
     document.querySelectorAll('.nav-item').forEach(b => b.classList.remove('active'));
@@ -326,9 +326,9 @@ function navigate(page) {
   renderPage();
 }
 
-// ═══════════════════════════════════════════
+// âââââââââââââââââââââââââââââââââââââââââââ
 // TOAST
-// ═══════════════════════════════════════════
+// âââââââââââââââââââââââââââââââââââââââââââ
 function toast(msg) {
   const el = document.createElement('div');
   el.className = 'toast';
@@ -337,9 +337,9 @@ function toast(msg) {
   setTimeout(() => el.remove(), 2500);
 }
 
-// ═══════════════════════════════════════════
+// âââââââââââââââââââââââââââââââââââââââââââ
 // RENDER ENGINE
-// ═══════════════════════════════════════════
+// âââââââââââââââââââââââââââââââââââââââââââ
 async function renderPage() {
   const c = document.getElementById('content');
   // Remove old FAB
@@ -353,9 +353,9 @@ async function renderPage() {
   }
 }
 
-// ═══════════════════════════════════════════
+// âââââââââââââââââââââââââââââââââââââââââââ
 // DASHBOARD
-// ═══════════════════════════════════════════
+// âââââââââââââââââââââââââââââââââââââââââââ
 async function renderDashboard(c) {
   const [products, sales, buyers] = await Promise.all([
     dbGetAll('products'), dbGetAll('sales'), dbGetAll('buyers')
@@ -476,9 +476,9 @@ function buildRevenueChart(sales) {
   });
 }
 
-// ═══════════════════════════════════════════
+// âââââââââââââââââââââââââââââââââââââââââââ
 // PRODUCTS PAGE
-// ═══════════════════════════════════════════
+// âââââââââââââââââââââââââââââââââââââââââââ
 async function renderProducts(c) {
   const products = await dbGetAll('products');
   const sales = await dbGetAll('sales');
@@ -520,16 +520,16 @@ async function renderProducts(c) {
 }
 
 function filterProducts(query) {
-  // Simple filter — re-render could be smarter but works fine
+  // Simple filter â re-render could be smarter but works fine
   const q = query.toLowerCase();
   document.querySelectorAll('#productList .card').forEach(card => {
     card.style.display = card.textContent.toLowerCase().includes(q) ? '' : 'none';
   });
 }
 
-// ═══════════════════════════════════════════
+// âââââââââââââââââââââââââââââââââââââââââââ
 // SALES PAGE
-// ═══════════════════════════════════════════
+// âââââââââââââââââââââââââââââââââââââââââââ
 async function renderSales(c) {
   const sales = await dbGetAll('sales');
 
@@ -594,9 +594,9 @@ function filterSalesByDesign(btn, design) {
   });
 }
 
-// ═══════════════════════════════════════════
+// âââââââââââââââââââââââââââââââââââââââââââ
 // BUYERS PAGE
-// ═══════════════════════════════════════════
+// âââââââââââââââââââââââââââââââââââââââââââ
 async function renderBuyers(c) {
   const buyers = await dbGetAll('buyers');
   const sales = await dbGetAll('sales');
@@ -646,9 +646,9 @@ function filterBuyers(query) {
   });
 }
 
-// ═══════════════════════════════════════════
+// âââââââââââââââââââââââââââââââââââââââââââ
 // ADD PRODUCT MODAL
-// ═══════════════════════════════════════════
+// âââââââââââââââââââââââââââââââââââââââââââ
 function showAddProductModal(existing) {
   const isEdit = !!existing;
   const overlay = document.createElement('div');
@@ -802,9 +802,9 @@ async function deleteProduct(id) {
   renderPage();
 }
 
-// ═══════════════════════════════════════════
+// âââââââââââââââââââââââââââââââââââââââââââ
 // ADD SALE MODAL
-// ═══════════════════════════════════════════
+// âââââââââââââââââââââââââââââââââââââââââââ
 async function showAddSaleModal() {
   const products = await dbGetAll('products');
   const buyers = await dbGetAll('buyers');
@@ -995,9 +995,9 @@ async function deleteSale(id) {
   renderPage();
 }
 
-// ═══════════════════════════════════════════
+// âââââââââââââââââââââââââââââââââââââââââââ
 // ADD BUYER MODAL
-// ═══════════════════════════════════════════
+// âââââââââââââââââââââââââââââââââââââââââââ
 function showAddBuyerModal(existing) {
   const isEdit = !!existing;
   const overlay = document.createElement('div');
@@ -1109,9 +1109,9 @@ async function deleteBuyer(id) {
   renderPage();
 }
 
-// ═══════════════════════════════════════════
+// âââââââââââââââââââââââââââââââââââââââââââ
 // EXCEL EXPORT
-// ═══════════════════════════════════════════
+// âââââââââââââââââââââââââââââââââââââââââââ
 async function exportToExcel() {
   const [products, sales, buyers] = await Promise.all([
     dbGetAll('products'), dbGetAll('sales'), dbGetAll('buyers')
@@ -1186,17 +1186,17 @@ async function exportToExcel() {
   toast('Excel exported!');
 }
 
-// ═══════════════════════════════════════════
+// âââââââââââââââââââââââââââââââââââââââââââ
 // HELPERS
-// ═══════════════════════════════════════════
+// âââââââââââââââââââââââââââââââââââââââââââ
 function formatCurrency(n) {
-  return '$' + (n || 0).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+  return 'Rs.' + (n || 0).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
 }
 
 function formatCurrencyShort(n) {
-  if (n >= 1000000) return '$' + (n / 1000000).toFixed(1) + 'M';
-  if (n >= 1000) return '$' + (n / 1000).toFixed(1) + 'K';
-  return '$' + n;
+  if (n >= 1000000) return 'Rs.' + (n / 1000000).toFixed(1) + 'M';
+  if (n >= 1000) return 'Rs.' + (n / 1000).toFixed(1) + 'K';
+  return 'Rs.' + n;
 }
 
 function formatDate(d) {
@@ -1220,11 +1220,47 @@ function addFab(onclick) {
   document.body.appendChild(fab);
 }
 
-// ═══════════════════════════════════════════
+// âââââââââââââââââââââââââââââââââââââââââââ
 // INIT
-// ═══════════════════════════════════════════
+// âââââââââââââââââââââââââââââââââââââââââââ
+
+// SEED DATA
+async function seedIfEmpty() {
+  const tx = db.transaction(['products','buyers','sales'],'readonly');
+  const pCount = await new Promise(r => { const req = tx.objectStore('products').count(); req.onsuccess = () => r(req.result); });
+  if (pCount > 0) return;
+  const products = [
+    {name:'Women Target Top',category:'Tops',sizes:'L, XL, 2XL, 3XL',pricePerUnit:1550,photo:'',notes:'Target Women - Olief style',createdAt:Date.now()},
+    {name:'TEKSO Women D',category:'Tops',sizes:'M, L, XL, 2XL',pricePerUnit:1550,photo:'',notes:'Sample Approved 03/06/2026',createdAt:Date.now()+1}
+  ];
+  const buyers = [
+    {name:'Wajira Tex',phone:'',email:'',address:'',notes:'',createdAt:Date.now()},
+    {name:'Chamo Tex',phone:'',email:'',address:'',notes:'',createdAt:Date.now()+1},
+    {name:'Insel Col',phone:'',email:'',address:'',notes:'',createdAt:Date.now()+2},
+    {name:'Abee Tex',phone:'',email:'',address:'',notes:'',createdAt:Date.now()+3},
+    {name:'Neatmo',phone:'',email:'',address:'',notes:'',createdAt:Date.now()+4}
+  ];
+  const txW = db.transaction(['products','buyers'],'readwrite');
+  const pIds = [];
+  for (const p of products) { await new Promise(r => { const req = txW.objectStore('products').add(p); req.onsuccess = () => { pIds.push(req.result); r(); }; }); }
+  const bIds = [];
+  for (const b of buyers) { await new Promise(r => { const req = txW.objectStore('buyers').add(b); req.onsuccess = () => { bIds.push(req.result); r(); }; }); }
+  await new Promise(r => { txW.oncomplete = r; });
+  const salesData = [
+    {productId:pIds[1],buyerId:bIds[0],offeredQty:200,acceptedQty:180,pricePerUnit:1550,date:'2026-06-03',notes:'TEKSO order'},
+    {productId:pIds[1],buyerId:bIds[1],offeredQty:150,acceptedQty:120,pricePerUnit:1550,date:'2026-06-03',notes:'TEKSO order'},
+    {productId:pIds[1],buyerId:bIds[2],offeredQty:160,acceptedQty:140,pricePerUnit:1550,date:'2026-06-03',notes:'TEKSO order'},
+    {productId:pIds[1],buyerId:bIds[3],offeredQty:60,acceptedQty:50,pricePerUnit:1550,date:'2026-06-03',notes:'TEKSO order'},
+    {productId:pIds[1],buyerId:bIds[4],offeredQty:80,acceptedQty:60,pricePerUnit:1550,date:'2026-06-03',notes:'TEKSO order'}
+  ];
+  const txS = db.transaction('sales','readwrite');
+  for (const s of salesData) { s.createdAt = Date.now(); txS.objectStore('sales').add(s); }
+  await new Promise(r => { txS.oncomplete = r; });
+}
+
 (async () => {
   await openDB();
+  await seedIfEmpty();
   renderPage();
 })();
 
