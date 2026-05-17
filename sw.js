@@ -1,4 +1,4 @@
-const CACHE_NAME = 'garmentflow-v3';
+const CACHE_NAME = 'garmentflow-v4h';
 const ASSETS = [
   '/',
   '/index.html',
