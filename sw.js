@@ -1,4 +1,4 @@
-const CACHE_NAME = 'garmentflow-v1';
+const CACHE_NAME = 'garmentflow-v3';
 const ASSETS = [
   '/',
   '/index.html',
@@ -24,12 +24,12 @@ self.addEventListener('activate', e => {
 
 self.addEventListener('fetch', e => {
   e.respondWith(
-    caches.match(e.request).then(r => r || fetch(e.request).then(resp => {
+    fetch(e.request).then(resp => {
       if (resp.status === 200 && e.request.method === 'GET') {
         const clone = resp.clone();
         caches.open(CACHE_NAME).then(c => c.put(e.request, clone));
       }
       return resp;
-    }).catch(() => caches.match('/index.html')))
+    }).catch(() => caches.match(e.request).then(r => r || caches.match('/index.html')))
   );
 });
